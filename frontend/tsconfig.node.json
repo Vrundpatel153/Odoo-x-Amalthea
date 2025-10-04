@@ -10,7 +10,8 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
+  "noEmit": true,
+  "types": ["node", "vite/client", "react", "react-dom"],
 
   
     "strict": true,

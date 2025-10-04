@@ -21,7 +21,6 @@ const Dashboard = () => {
   const expenses = storage.getExpenses().filter(e => e.companyId === currentCompany.id);
   const users = storage.getUsers().filter(u => u.companyId === currentCompany.id);
 
-  // Admin stats
   const totalExpenses = expenses.length;
   const pendingExpenses = expenses.filter(e => e.status === 'pending').length;
   const approvedExpenses = expenses.filter(e => e.status === 'approved').length;
@@ -30,12 +29,11 @@ const Dashboard = () => {
     .filter(e => e.status === 'approved')
     .reduce((sum, e) => sum + (e.totalInCompanyCurrency || e.totalAmount), 0);
 
-  // Employee stats
+  
   const myExpenses = expenses.filter(e => e.requesterId === currentUser.id);
   const myPending = myExpenses.filter(e => e.status === 'pending').length;
   const myApproved = myExpenses.filter(e => e.status === 'approved').length;
 
-  // Manager stats - using approval engine for consistent logic
   const myApprovals = ApprovalEngine.getPendingApprovalsForUser(currentUser.id, currentCompany.id);
 
   const renderAdminDashboard = () => (
