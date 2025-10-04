@@ -64,6 +64,7 @@ export const AppShell = ({ children }: AppShellProps) => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'Users' },
     { path: '/admin/approval-rules', icon: FileText, label: 'Approval Rules' },
+    { path: '/admin/approve-expenses', icon: CheckCircle2, label: 'Approve Expenses' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
   ];
 

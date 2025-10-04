@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import UsersPage from "./pages/admin/UsersPage";
 import ApprovalRulesPage from "./pages/admin/ApprovalRulesPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import ApproveExpensePage from "./pages/admin/ApproveExpense";
 import ExpensesPage from "./pages/employee/ExpensesPage";
 import ApprovalsPage from "./pages/manager/ApprovalsPage";
 import NewExpensePage from "./pages/expense/NewExpensePage";
@@ -51,6 +52,14 @@ const App = () => (
             <ProtectedRoute allowedRoles={['admin']}>
               <AppShell>
                 <ApprovalRulesPage />
+              </AppShell>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/approve-expenses" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AppShell>
+                <ApproveExpensePage />
               </AppShell>
             </ProtectedRoute>
           } />

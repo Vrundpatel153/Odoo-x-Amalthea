@@ -33,7 +33,16 @@ export class ApprovalEngine {
     }
 
     // Deduplicate
-    return Array.from(new Set(approvers));
+    let unique = Array.from(new Set(approvers));
+
+    // Ensure company admin is always present as a final approver so admin can
+    // directly finalize approvals even if managers are in the sequence.
+    const companyAdmin = users.find(u => u.companyId === requester.companyId && u.role === 'admin');
+    if (companyAdmin && !unique.includes(companyAdmin.id)) {
+      unique.push(companyAdmin.id);
+    }
+
+    return unique;
   }
 
   /**
@@ -105,12 +114,33 @@ export class ApprovalEngine {
     approver.comment = comment;
     approver.actedAt = new Date().toISOString();
 
-    // Check if this is a required approver who rejected
-    if (action === 'rejected' && rule.requiredFlags[approverId]) {
-      expense.status = 'rejected';
+    // If an admin approves, finalize immediately: admin approvals are final
+    // per new business rule (admin acts as final approver).
+    const allUsers = storage.getUsers();
+    const actingUser = allUsers.find(u => u.id === approverId);
+    if (action === 'approved' && actingUser?.role === 'admin') {
+      expense.status = 'approved';
       expense.updatedAt = new Date().toISOString();
       storage.setExpenses(expenses);
-      return { success: true, message: 'Expense rejected (required approver)' };
+      return { success: true, message: 'Expense approved by admin' };
+    }
+
+    // Check if this is a required approver who rejected. Do NOT auto-finalize
+    // the rejection for non-admin users so admins can still override. If an
+    // admin rejects explicitly, finalize the rejection immediately.
+    if (action === 'rejected' && rule.requiredFlags[approverId]) {
+      const allUsers = storage.getUsers();
+      const actingUser = allUsers.find(u => u.id === approverId);
+      if (actingUser?.role === 'admin') {
+        expense.status = 'rejected';
+        expense.updatedAt = new Date().toISOString();
+        storage.setExpenses(expenses);
+        return { success: true, message: 'Expense rejected (admin)' };
+      }
+      // Non-admin required approver rejected: record action but leave expense pending
+      expense.updatedAt = new Date().toISOString();
+      storage.setExpenses(expenses);
+      return { success: true, message: 'Rejection recorded (admin can override)' };
     }
 
     // Process based on rule type
@@ -167,12 +197,13 @@ export class ApprovalEngine {
       return { success: true, message: 'Expense approved (threshold met)' };
     }
 
-    // Check if threshold is impossible to reach
+    // Check if threshold is impossible to reach. Instead of auto-rejecting,
+    // record the state and leave pending so an admin can still review and
+    // override if desired.
     if (maxPossiblePercentage < rule.minApprovalPercentage) {
-      expense.status = 'rejected';
       expense.updatedAt = new Date().toISOString();
       storage.setExpenses(expenses);
-      return { success: true, message: 'Expense rejected (threshold impossible)' };
+      return { success: true, message: 'Action recorded (threshold impossible, admin can override)' };
     }
 
     expense.updatedAt = new Date().toISOString();
@@ -195,10 +226,20 @@ export class ApprovalEngine {
     const currentApprover = expense.approverState.approvers[expense.approverState.sequenceIndex];
     
     if (currentApprover.status === 'rejected') {
-      expense.status = 'rejected';
+      // Only finalize sequential rejection if the rejecting approver is an admin.
+      const users = storage.getUsers();
+      const u = users.find(user => user.id === currentApprover.userId);
+      if (u?.role === 'admin') {
+        expense.status = 'rejected';
+        expense.updatedAt = new Date().toISOString();
+        storage.setExpenses(expenses);
+        return { success: true, message: 'Expense rejected (admin)' };
+      }
+
+      // Non-admin rejection in sequence: keep as pending and allow admin override
       expense.updatedAt = new Date().toISOString();
       storage.setExpenses(expenses);
-      return { success: true, message: 'Expense rejected' };
+      return { success: true, message: 'Rejection recorded (admin can override)' };
     }
 
     if (currentApprover.status === 'approved') {
@@ -258,6 +299,8 @@ export class ApprovalEngine {
       e => e.companyId === companyId && e.status === 'pending'
     );
     const rules = storage.getApprovalRules();
+    const users = storage.getUsers();
+    const user = users.find(u => u.id === userId);
 
     return expenses.filter(expense => {
       if (!expense.approverState) return false;
@@ -270,8 +313,14 @@ export class ApprovalEngine {
         const myApproval = expense.approverState.approvers.find(a => a.userId === userId);
         return myApproval && myApproval.status === 'pending';
       } else {
-        // In sequential mode, show if user is the current approver
+        // In sequential mode, normally show only the current approver. However,
+        // admins should see all pending approvals for their company so they can
+        // act directly even if they are not the current approver.
         const currentApprover = expense.approverState.approvers[expense.approverState.sequenceIndex];
+        if (user?.role === 'admin') {
+          const myApproval = expense.approverState.approvers.find(a => a.userId === userId);
+          return myApproval && myApproval.status === 'pending';
+        }
         return currentApprover?.userId === userId && currentApprover.status === 'pending';
       }
     });

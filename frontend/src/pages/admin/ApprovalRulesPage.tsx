@@ -5,6 +5,13 @@ import { ApprovalRule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +31,9 @@ const ApprovalRulesPage = () => {
     parallel: false,
     minApprovalPercentage: 100,
     escalationDays: 3,
+    approverIds: [] as string[],
+    requiredFlags: {} as Record<string, boolean>,
+    specificApproverId: 'none',
   });
 
   const users = storage.getUsers().filter(u => u.companyId === currentCompany?.id);
@@ -32,16 +42,21 @@ const ApprovalRulesPage = () => {
     e.preventDefault();
     
     const allRules = storage.getApprovalRules();
+    const sequence = formData.approverIds.length > 0 ? formData.approverIds : ['manager'];
+    const requiredFlags = { ...formData.requiredFlags };
+    // normalize specificApproverId
+    const specific = formData.specificApproverId === 'none' ? null : formData.specificApproverId;
+
     const newRule: ApprovalRule = {
       id: editingRule?.id || `rule-${Date.now()}`,
       companyId: currentCompany!.id,
       name: formData.name,
       scope: formData.scope,
-      sequence: ['manager'],
+      sequence,
       parallel: formData.parallel,
-      requiredFlags: { 'manager': true },
+      requiredFlags,
       minApprovalPercentage: formData.minApprovalPercentage,
-      specificApproverId: null,
+      specificApproverId: specific,
       escalationDays: formData.escalationDays,
       createdAt: editingRule?.createdAt || new Date().toISOString(),
     };
@@ -69,6 +84,9 @@ const ApprovalRulesPage = () => {
       parallel: rule.parallel,
       minApprovalPercentage: rule.minApprovalPercentage,
       escalationDays: rule.escalationDays,
+      approverIds: rule.sequence || [],
+      requiredFlags: rule.requiredFlags || {},
+      specificApproverId: rule.specificApproverId || 'none',
     });
     setIsDialogOpen(true);
   };
@@ -91,6 +109,9 @@ const ApprovalRulesPage = () => {
       parallel: false,
       minApprovalPercentage: 100,
       escalationDays: 3,
+      approverIds: [],
+      requiredFlags: {},
+      specificApproverId: 'none',
     });
   };
 
@@ -137,6 +158,52 @@ const ApprovalRulesPage = () => {
                   placeholder="all"
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Approvers (sequence)</Label>
+                <div className="space-y-2">
+                  {users.map(u => (
+                    <div key={u.id} className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.approverIds.includes(u.id)}
+                        onChange={(e) => {
+                          const ids = new Set(formData.approverIds);
+                          if (e.target.checked) ids.add(u.id); else ids.delete(u.id);
++                          setFormData({ ...formData, approverIds: Array.from(ids) });
+                        }}
+                      />
+                      <span className="flex-1">{u.name} <span className="text-xs text-muted-foreground">({u.role})</span></span>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!formData.requiredFlags[u.id]}
+                          onChange={(e) => {
+                            const flags = { ...formData.requiredFlags };
+                            if (e.target.checked) flags[u.id] = true; else delete flags[u.id];
+                            setFormData({ ...formData, requiredFlags: flags });
+                          }}
+                        />
+                        Required
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="specific">Specific Approver (auto-approve if this approver approves)</Label>
+                <Select value={formData.specificApproverId} onValueChange={(val) => setFormData({ ...formData, specificApproverId: val })}>
+                  <SelectTrigger id="specific">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.name} ({u.role})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="parallel">Parallel Approval</Label>
