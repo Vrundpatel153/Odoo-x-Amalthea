@@ -139,158 +139,111 @@ Conditional Rules
 Percentage rule (e.g., 60%)
 
 Specific approver rule (e.g., CFO auto-approve)
+# Expense Management System — Full-Stack (MERN + TypeScript)
 
-Hybrid (percentage OR specific approver)
+> Smart, auditable expense reimbursement with configurable multi-level approvals.
 
-Approval Engine
+[![Status](https://img.shields.io/badge/status-production-green.svg)]()
+[![Tech](https://img.shields.io/badge/tech-MERN%20%2B%20TS-blue.svg)]()
 
-Deterministic logic for sequential/parallel flows, percentage & specific approver rules, required approvers reject logic, hybrid logic, escalation days, audit trail persisted in DB.
+---
 
-OCR & Receipts
+## Table of Contents
 
-Server runs OCR (Tesseract) and returns parsed results + confidence score. Frontend pre-fills and allows edits.
+- Overview
+- Tech Stack
+- Monorepo Structure
+- Quick Start
+- Features
+- APIs & Integrations
+- UI System
+- Testing
+- License
 
-Currency & Exchange Rates
+---
 
-Uses ExchangeRate API (configurable), caches rates on server with TTL; each expense stores the rate used and total in company currency.
+## Overview
 
-Admin Tools
+A production-style MERN + TypeScript app that replaces manual reimbursements with a clear, auditable workflow. It includes role-based access, multi-step approvals, OCR receipt parsing, currency conversion, admin tools, and an immutable audit trail.
 
-Rule editor + reorderable sequence, simulator (test a sample expense and preview approver list and likely outcome), import/export JSON, seed/reset.
+---
 
-🧾 API Snapshot (key endpoints)
-bash
-Copy code
-POST /api/v1/auth/signup
-POST /api/v1/auth/login
-POST /api/v1/auth/refresh
+## Tech Stack
 
-GET  /api/v1/users
-POST /api/v1/users
-PATCH /api/v1/users/:id
+- Client: React + TypeScript (Vite), Tailwind CSS, shadcn/ui
+- Server: Node.js + TypeScript, Express, Mongoose (MongoDB)
+- Auth: JWT (access + refresh)
+- OCR: Tesseract (server) with a demo-friendly parser fallback
+- Tests: Jest + RTL (frontend), Jest + Supertest (backend)
 
-POST /api/v1/expenses
-GET  /api/v1/expenses
-GET  /api/v1/expenses/:id
+---
 
-GET  /api/v1/approvals/pending
-POST /api/v1/approvals/:expenseId/action
+## Monorepo Structure
 
-GET  /api/v1/approval-rules
-POST /api/v1/approval-rules
-POST /api/v1/approval-rules/simulate
+```
+Odoo-x-Amalthea/
+	frontend/            # React app (Vite + TS)
+		public/
+		src/
+	backend/             # Express API (TS)
+		src/
+	README.md
+```
 
-POST /api/v1/receipts/upload
-POST /api/v1/admin/seed
-GET  /api/v1/admin/export
-POST /api/v1/admin/import
-(Full OpenAPI spec included in /server/docs.)
+---
 
-📐 UI / Components / Design System
-This project includes a polished component library matching Excalidraw:
+## Quick Start (Local)
 
-Design Tokens
-Primary: #6C63FF
+Prerequisites: Node 18+, npm, and MongoDB (local/Atlas)
 
-Accent: #00C2A8
+1) Backend (API)
+	 - cd backend
+	 - copy .env (see .env.example) and set MONGO_URI, JWT_SECRET
+	 - npm install; npm run dev
 
-Dark bg: #0b0b0f
+2) Frontend (Client)
+	 - cd frontend
+	 - npm install; npm run dev
 
-Light bg: #f6f7fb
+---
 
-Radius: 2xl for cards
+## Features
 
-Spacing: Tailwind default (4px scale)
+- Roles: Admin, Manager, Employee
+- Approvals: sequential/parallel, percentage thresholds, specific approver, required approvers, escalation days
+- OCR & Receipts: upload, parse, edit prefill
+- Currency: live ExchangeRate API; each expense stores exchange rate and converted total
+- Admin: users, rules, impersonation, import/export, delete company, clear imported JSON
 
-Font: Inter
+---
 
-Core components
-AppShell — Topbar (dark/light toggle, search, user menu) + collapsible Sidebar
+## APIs & Integrations
 
-Card — glassmorphism, header + action area, p-6 padding
+- REST Countries (client)
+	- Endpoint: https://restcountries.com/v3.1/all?fields=name,currencies
+	- Usage: maps country → currency (cached 7 days). See `frontend/src/lib/countries.ts`.
 
-Table — sticky header, sortable columns, search, pagination (10/25/50), row action ellipsis
+- ExchangeRate API (client)
+	- Endpoint: https://api.exchangerate-api.com/v4/latest/{BASE}
+	- Usage: converts expense amounts to company currency with 12h TTL. See `frontend/src/lib/exchangeRates.ts`.
 
-Form Inputs — label above, inline validation, accessible aria attributes
+---
 
-Modal — accessible dialog with keyboard focus trap
+## UI System
 
-Toast — aria-live notifications for success/error
+- AppShell with collapsible sidebar and theme toggle
+- Landing page with hero, features, how-it-works, CTA band
+- Glassmorphism cards, accessible forms, consistent focus styles
 
-ReceiptUploader — drag & drop + preview + OCR confidence chip
+---
 
-ApprovalTimeline — per-expense timeline of approver actions with avatars & timestamps
+## Testing
 
-RuleBuilder — drag & drop sequence, required toggles, min-percentage slider, specific approver picker, simulator modal
+- Backend: unit tests for approval engine, API integration tests
+- Frontend: component/integration tests for core flows
 
-All components are responsive; tables collapse to card lists on mobile and right-side panels become full-screen modals.
+---
 
-✅ Acceptance Checklist (for Judges / Evaluators)
-Follow these steps to validate core flows:
+## License
 
-Start client & server (see Quick Start).
-
-Reset to seed from Admin → Settings (or POST /api/v1/admin/seed).
-
-Employee_C: create expense, attach receipt → confirm OCR parsed values appear and are editable → submit.
-
-Manager_B: check /manager/approvals, approve/reject with comment → verify action logged in approval timeline.
-
-Admin_A: create rule with minApprovalPercentage = 100 and approvers Manager_B + Admin_A → a single rejection should set expense → Rejected (fix verified).
-
-Rule simulator: test a sample expense and review predicted approver list & output.
-
-Import/Export: export app JSON, wipe DB, import JSON, confirm data restored.
-
-Escalation: create a rule with escalationDays low and verify background job marks escalated.
-
-🧪 Tests
-Backend: unit tests for approvalEngine and integration tests for API endpoints (Jest + Supertest)
-
-Frontend: component & integration tests for forms, tables, and approval flows (Jest + React Testing Library)
-
-Run tests:
-
-bash
-Copy code
-# server
-cd server
-npm run test
-
-# client
-cd client
-npm run test
-🔒 Security Notes
-Passwords hashed (bcrypt).
-
-JWT short-lived access tokens + refresh flow.
-
-Server-side role checks on all sensitive endpoints.
-
-Input validation & sanitization (Joi / express-validator).
-
-File upload limits & content validation for receipts.
-
-🧭 Demo Script (2–3 minute walkthrough)
-Intro (10s): show landing & one-line problem statement.
-
-Admin (30s): login as Admin_A → Users page → create Manager_B & Employee_C → create approval rule using "manager" placeholder → simulate.
-
-Employee (40s): login as Employee_C → New Expense → upload receipt (OCR auto fills) → submit.
-
-Manager (30s): login as Manager_B (or Admin impersonate) → Approvals → open expense → Approve → show timeline.
-
-Admin (10s): show rule editor & import/export seed. Conclude.
-
-📄 README Addenda / Useful Links
-Excalidraw mockups (design reference): included in repo /design/excalidraw
-
-OpenAPI spec: /server/docs/openapi.yaml
-
-Seed JSON: /server/seed/seed.json
-
-📞 Contact & Support
-Team Lead: Vrund Patel — available on discord group for live demo assistance.
-
-📝 License
-MIT — see LICENSE.
+MIT — see LICENSE

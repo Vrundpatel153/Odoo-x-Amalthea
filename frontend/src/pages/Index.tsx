@@ -10,30 +10,33 @@ const Index = () => {
     <div className="relative min-h-screen bg-gradient-to-b from-background via-muted/20 to-background overflow-hidden">
       {/* Ambient background accents */}
       <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_50%_30%,#000_20%,transparent_70%)]">
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px', color: 'var(--border)' }} />
         <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
         <div className="absolute -bottom-32 right-1/4 h-[28rem] w-[28rem] rounded-full bg-emerald-500/15 blur-3xl" />
       </div>
 
       {/* Header */}
-      <header className="container mx-auto px-4 py-6 flex items-center justify-between relative z-10">
+      <header className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src="/logo-web.png" alt="Logo" className="h-8 w-8 object-contain" />
           <span className="font-semibold">Expense Manager</span>
         </div>
-        <nav className="flex items-center gap-2">
-          <Button variant="ghost" className="text-sm" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
-            Features
-          </Button>
-          <Button variant="ghost" className="text-sm" onClick={() => navigate('/login')}>
-            Sign in
-          </Button>
-          <Button size="sm" onClick={() => navigate('/signup')}>
-            Get started
-          </Button>
-          <div className="ml-1">
-            <ThemeToggle />
-          </div>
-        </nav>
+          <nav className="flex items-center gap-2">
+            <Button variant="ghost" className="text-sm" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+              Features
+            </Button>
+            <Button variant="ghost" className="text-sm" onClick={() => navigate('/login')}>
+              Sign in
+            </Button>
+            <Button size="sm" onClick={() => navigate('/signup')}>
+              Get started
+            </Button>
+            <div className="ml-1">
+              <ThemeToggle />
+            </div>
+          </nav>
+        </div>
       </header>
 
       {/* Hero */}
@@ -55,7 +58,7 @@ const Index = () => {
               <Button variant="outline" size="lg" onClick={() => navigate('/login')}>Sign in</Button>
             </div>
             {/* Social proof */}
-            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 items-center opacity-70">
+            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 items-center opacity-80">
               <div className="text-xs text-muted-foreground">Multi‑currency</div>
               <div className="text-xs text-muted-foreground">Audit ready</div>
               <div className="text-xs text-muted-foreground">Secure</div>
@@ -125,7 +128,7 @@ export default Index;
 // Small presentational components
 function FeatureCard({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
   return (
-    <div className="rounded-xl border bg-card p-5">
+    <div className="rounded-xl border bg-card p-5 transition-transform hover:-translate-y-0.5 hover:shadow-sm">
       <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
         {icon}
       </div>
