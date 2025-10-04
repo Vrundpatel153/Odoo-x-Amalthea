@@ -1,0 +1,138 @@
+import { SeedData } from './types';
+
+export const seedData: SeedData = {
+  companies: [
+    {
+      id: 'company-acme',
+      name: 'Acme Corporation',
+      country: 'United States',
+      defaultCurrency: 'USD',
+      createdAt: new Date('2024-01-01').toISOString(),
+    },
+  ],
+  users: [
+    {
+      id: 'user-admin',
+      companyId: 'company-acme',
+      name: 'Admin A',
+      email: 'admin@acme.test',
+      password: 'Admin@123',
+      role: 'admin',
+      managerId: null,
+      createdAt: new Date('2024-01-01').toISOString(),
+    },
+    {
+      id: 'user-manager',
+      companyId: 'company-acme',
+      name: 'Manager B',
+      email: 'manager@acme.test',
+      password: 'Manager@123',
+      role: 'manager',
+      managerId: 'user-admin',
+      createdAt: new Date('2024-01-02').toISOString(),
+    },
+    {
+      id: 'user-employee',
+      companyId: 'company-acme',
+      name: 'Employee C',
+      email: 'employee@acme.test',
+      password: 'Employee@123',
+      role: 'employee',
+      managerId: 'user-manager',
+      createdAt: new Date('2024-01-03').toISOString(),
+    },
+  ],
+  approvalRules: [
+    {
+      id: 'rule-default',
+      companyId: 'company-acme',
+      name: 'Default Approval Rule',
+      scope: 'all',
+      sequence: ['manager', 'user-admin'],
+      parallel: false,
+      requiredFlags: {
+        'manager': true,
+        'user-admin': false,
+      },
+      minApprovalPercentage: 100,
+      specificApproverId: null,
+      escalationDays: 3,
+      createdAt: new Date('2024-01-01').toISOString(),
+    },
+    {
+      id: 'rule-parallel',
+      companyId: 'company-acme',
+      name: 'Parallel Approval Rule',
+      scope: 'Travel',
+      sequence: ['user-manager', 'user-admin'],
+      parallel: true,
+      requiredFlags: {
+        'user-manager': false,
+        'user-admin': false,
+      },
+      minApprovalPercentage: 50,
+      specificApproverId: null,
+      escalationDays: 2,
+      createdAt: new Date('2024-01-01').toISOString(),
+    },
+  ],
+  expenses: [
+    {
+      id: 'expense-1',
+      companyId: 'company-acme',
+      requesterId: 'user-employee',
+      description: 'Office Supplies',
+      date: new Date('2024-10-01').toISOString(),
+      category: 'Supplies',
+      paidBy: 'Employee C',
+      remarks: 'Monthly office supplies purchase',
+      expenseCurrency: 'USD',
+      totalAmount: 150.00,
+      totalInCompanyCurrency: 150.00,
+      exchangeRate: 1.0,
+      exchangeRateTimestamp: new Date('2024-10-01').toISOString(),
+      status: 'pending',
+      approvalRuleId: 'rule-default',
+      approverState: {
+        approvers: [
+          {
+            userId: 'user-manager',
+            status: 'pending',
+          },
+          {
+            userId: 'user-admin',
+            status: 'pending',
+          },
+        ],
+        sequenceIndex: 0,
+      },
+      createdAt: new Date('2024-10-01').toISOString(),
+      updatedAt: new Date('2024-10-01').toISOString(),
+    },
+  ],
+  receipts: [],
+  approvalActions: [],
+  exchangeRates: [
+    {
+      from: 'USD',
+      to: 'EUR',
+      rate: 0.92,
+      timestamp: new Date().toISOString(),
+      ttl: 12 * 60 * 60 * 1000, // 12 hours
+    },
+    {
+      from: 'USD',
+      to: 'GBP',
+      rate: 0.79,
+      timestamp: new Date().toISOString(),
+      ttl: 12 * 60 * 60 * 1000,
+    },
+    {
+      from: 'USD',
+      to: 'JPY',
+      rate: 149.50,
+      timestamp: new Date().toISOString(),
+      ttl: 12 * 60 * 60 * 1000,
+    },
+  ],
+};
