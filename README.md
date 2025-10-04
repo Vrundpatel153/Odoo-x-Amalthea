@@ -237,6 +237,50 @@ Prerequisites: Node 18+, npm, and MongoDB (local/Atlas)
 
 ---
 
+## UI Preview
+
+<div align="center">
+	<img src="frontend/public/logo-web.png" alt="Logo" width="96" height="96" />
+	<p><em>Expense Manager — Modern, accessible, responsive UI</em></p>
+</div>
+
+- Landing hero with CTA buttons and subtle background grid
+- Feature cards with hover lift and consistent iconography
+- Sticky header, theme toggle, and clean navigation
+- Dialog-based forms with focus-ring and keyboard accessibility
+
+---
+
+## Component Props (Examples)
+
+### ApprovalActionButtons
+
+```ts
+type ApprovalActionButtonsProps = {
+	expenseId: string;     // target expense id
+	approverId: string;    // acting approver user id
+	onActionComplete?: () => void; // optional callback on success
+}
+```
+
+Usage: renders Approve/Reject buttons and a dialog to add an optional comment. Delegates logic to the centralized approval engine.
+
+### AppShell
+
+```ts
+type AppShellProps = {
+	children: React.ReactNode;
+}
+```
+
+Usage: wraps all authenticated pages with a sticky header, collapsible sidebar (hover-expand on desktop), user menu, and theme toggle. Navigation items adapt to role: admin, manager, or employee.
+
+### ThemeToggle
+
+Stores the selected theme in localStorage and respects system preference. Accessible button with an icon-only surface.
+
+---
+
 ## Testing
 
 - Backend: unit tests for approval engine, API integration tests

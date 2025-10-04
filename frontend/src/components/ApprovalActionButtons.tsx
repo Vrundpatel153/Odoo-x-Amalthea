@@ -19,7 +19,7 @@ export const ApprovalActionButtons = ({
   onActionComplete 
 }: ApprovalActionButtonsProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [actionType, setActionType] = useState<'approved' | 'rejected'>('approved');
+  const [actionType, setActionType] = useState('approved' as 'approved' | 'rejected');
   const [comment, setComment] = useState('');
 
   const handleAction = (action: 'approved' | 'rejected') => {
