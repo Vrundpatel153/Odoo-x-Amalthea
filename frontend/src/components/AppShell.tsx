@@ -23,7 +23,6 @@ import {
   Menu,
   X,
   FileText,
-  Building2,
   UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -102,7 +101,11 @@ export const AppShell = ({ children }: AppShellProps) => {
             </Button>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
-                <Building2 className="h-5 w-5 text-primary" />
+                <img
+                  src="/android-chrome-512x512.png"
+                  alt="Company expense logo"
+                  className="h-5 w-5"
+                />
               </div>
               <div>
                 <h1 className="font-semibold text-sm">{currentCompany.name}</h1>
