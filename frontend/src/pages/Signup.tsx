@@ -31,7 +31,7 @@ const Signup = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     
     if (!formData.companyName || !formData.adminName || !formData.email || !formData.password || !formData.country) {

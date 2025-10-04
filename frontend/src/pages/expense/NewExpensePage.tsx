@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { storage } from '@/lib/storage';
@@ -21,8 +21,10 @@ const NewExpensePage = () => {
   const navigate = useNavigate();
   const { currentUser, currentCompany } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [ocrData, setOcrData] = useState<Receipt['ocrData']>();
+  const [receiptFile, setReceiptFile] = useState(null as any);
+  const [isScanning, setIsScanning] = useState(false as any);
+  const fileInputRef = useRef(null as any);
+  const [ocrData, setOcrData] = useState(undefined as any);
   
   const [formData, setFormData] = useState({
     description: '',
@@ -34,31 +36,59 @@ const NewExpensePage = () => {
     totalAmount: 0,
   });
 
-  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const startScan = () => {
+    // trigger hidden file input
+    fileInputRef.current?.click();
+  };
+
+  const handleReceiptUpload = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setReceiptFile(file);
+    setIsScanning(true);
 
-    // Mock OCR processing
-    const mockOcr = {
-      amount: Math.random() * 500 + 50,
-      date: new Date().toISOString().split('T')[0],
-      merchant: 'Sample Merchant',
-      confidence: Math.random() * 0.3 + 0.7,
-    };
+    // Simulate 3-second OCR processing and autofill with fixed data
+    setTimeout(() => {
+      const fixedDateDisplay = '04-10-2025'; // dd-mm-yyyy for display in OCR panel
+      const toIso = (ddmmyyyy: string) => {
+        const [dd, mm, yyyy] = ddmmyyyy.split('-');
+        return `${yyyy}-${mm}-${dd}`; // yyyy-mm-dd for input type="date"
+      };
 
-    setOcrData(mockOcr);
-    setFormData(prev => ({
-      ...prev,
-      totalAmount: mockOcr.amount,
-      date: mockOcr.date,
-    }));
+      const fixedData = {
+        description: 'purchased supplies',
+        date: toIso(fixedDateDisplay),
+        category: 'Supplies',
+        expenseCurrency: 'USD',
+        totalAmount: 531.6429849125534,
+        paidBy: 'user 1',
+      } as const;
 
-    toast.success('Receipt uploaded and processed');
+      const mockOcr = {
+        amount: fixedData.totalAmount,
+        date: fixedDateDisplay,
+        merchant: undefined,
+        confidence: 1,
+      };
+
+      setOcrData(mockOcr);
+      setFormData(prev => ({
+        ...prev,
+        description: fixedData.description,
+        date: fixedData.date,
+        category: fixedData.category,
+        expenseCurrency: fixedData.expenseCurrency,
+        totalAmount: fixedData.totalAmount,
+        paidBy: fixedData.paidBy,
+      }));
+
+      setIsScanning(false);
+      toast.success('Receipt scanned and details autofilled');
+    }, 3000);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -270,20 +300,24 @@ const NewExpensePage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="receipt">Receipt (optional)</Label>
+              <Label>Scan Receipt</Label>
               <div className="flex items-center gap-2">
-                <Input
-                  id="receipt"
+                <Button type="button" variant="secondary" onClick={startScan} disabled={isScanning} className="gap-2">
+                  {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {isScanning ? 'Scanning receipt…' : 'Scan receipt'}
+                </Button>
+                <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*,.pdf"
                   onChange={handleReceiptUpload}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium"
+                  className="hidden"
                 />
               </div>
               {ocrData && (
                 <div className="text-sm text-muted-foreground mt-2 p-3 rounded-lg bg-muted/50">
                   <div className="font-medium mb-1">OCR Results (Confidence: {(ocrData.confidence! * 100).toFixed(0)}%)</div>
-                  <div>Merchant: {ocrData.merchant}</div>
+                  {ocrData.merchant && <div>Merchant: {ocrData.merchant}</div>}
                   <div>Amount: {ocrData.amount?.toFixed(2)}</div>
                   <div>Date: {ocrData.date}</div>
                 </div>
