@@ -18,6 +18,8 @@ export interface User {
   name: string;
   email: string;
   password: string;
+  // When true, user can log in with just email (any password accepted)
+  passwordless?: boolean;
   role: UserRole;
   managerId: string | null;
   paidBy?: string;

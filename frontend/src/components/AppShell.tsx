@@ -34,7 +34,7 @@ interface AppShellProps {
 export const AppShell = ({ children }: AppShellProps) => {
   const navigate = useNavigate();
   const { currentUser, currentCompany, logout, isImpersonating, stopImpersonation } = useAuthStore();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -102,9 +102,9 @@ export const AppShell = ({ children }: AppShellProps) => {
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
                 <img
-                  src="/android-chrome-512x512.png"
-                  alt="Company expense logo"
-                  className="h-5 w-5"
+                  src="/logo-web.png"
+                  alt="Company logo"
+                  className="h-6 w-6 object-contain"
                 />
               </div>
               <div>
@@ -161,12 +161,15 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </header>
 
-      <div className="flex w-full">
+  <div className="flex w-full">
         {/* Sidebar */}
         <aside
           className={cn(
-            'border-r bg-card/30 backdrop-blur-xl transition-all duration-300 sticky top-16 h-[calc(100vh-4rem)]',
+            'group border-r bg-card/30 backdrop-blur-xl transition-all duration-300 ease-in-out sticky top-16 h-[calc(100vh-4rem)]',
+            // When open, fixed width; when closed, icon-rail on lg and hidden on small
             sidebarOpen ? 'w-64' : 'w-0 lg:w-16',
+            // On hover (lg and up), expand the rail to full width
+            'lg:hover:w-64',
             'overflow-hidden'
           )}
         >
@@ -185,7 +188,12 @@ export const AppShell = ({ children }: AppShellProps) => {
                 }
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                <span className={cn('transition-opacity', sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-0')}>
+                <span
+                  className={cn(
+                    'transition-opacity',
+                    sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-0 lg:group-hover:opacity-100'
+                  )}
+                >
                   {item.label}
                 </span>
               </NavLink>
@@ -194,7 +202,7 @@ export const AppShell = ({ children }: AppShellProps) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto transition-all duration-300 ease-in-out">
           {children}
         </main>
       </div>

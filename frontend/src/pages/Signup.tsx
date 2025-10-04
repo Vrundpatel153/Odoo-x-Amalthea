@@ -60,7 +60,7 @@ const Signup = () => {
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 rounded-2xl bg-primary/10">
-              <Building2 className="h-8 w-8 text-primary" />
+              <img src="/logo-web.png" alt="Logo" className="h-8 w-8 object-contain" />
             </div>
           </div>
           <CardTitle className="text-2xl">Create your account</CardTitle>
@@ -119,7 +119,7 @@ const Signup = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@company.com"
+                placeholder="you@company.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
