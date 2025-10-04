@@ -8,20 +8,8 @@ import { storage } from './storage';
 export class ExchangeRateService {
   private static TTL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
 
-  /**
-   * Mock exchange rates (base: USD)
-   */
-  private static mockRates: Record<string, number> = {
-    'USD': 1.0,
-    'EUR': 0.92,
-    'GBP': 0.79,
-    'JPY': 149.50,
-    'CAD': 1.36,
-    'AUD': 1.52,
-    'CHF': 0.88,
-    'CNY': 7.24,
-    'INR': 83.12,
-  };
+  // Base rates cache by base currency response (full table), 12h TTL
+  private static BASE_CACHE_KEY = 'ems_exchange_base_tables';
 
   /**
    * Get exchange rate from cache or fetch new one
@@ -48,8 +36,8 @@ export class ExchangeRateService {
       }
     }
 
-    // Fetch new rate (mock)
-    const rate = await this.fetchRate(from, to);
+  // Fetch new rate using real API with caching of base tables
+  const rate = await this.fetchRate(from, to);
     
     // Update cache
     const newRate: ExchangeRate = {
@@ -68,17 +56,54 @@ export class ExchangeRateService {
   }
 
   /**
-   * Mock API call to fetch exchange rate
+   * Fetch cross rate via exchangerate-api.com free endpoint.
+   * Strategy: get full table for `from` base then lookup `to`. If that fails,
+   * try table for `to` base and invert. Cache base tables in localStorage.
    */
   private static async fetchRate(from: string, to: string): Promise<number> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const table = await this.getBaseTable(from);
+    const direct = table?.rates?.[to];
+    if (typeof direct === 'number' && direct > 0) return direct;
 
-    const fromRate = this.mockRates[from] || 1.0;
-    const toRate = this.mockRates[to] || 1.0;
+    // Fallback: get table for `to` and invert
+    const toTable = await this.getBaseTable(to);
+    const back = toTable?.rates?.[from];
+    if (typeof back === 'number' && back > 0) return 1 / back;
 
-    // Calculate cross rate
-    return toRate / fromRate;
+    // Last resort: 1:1 to avoid hard failures
+    return 1.0;
+  }
+
+  private static async getBaseTable(base: string): Promise<{ base: string; date?: string; rates: Record<string, number> } | null> {
+    const key = this.BASE_CACHE_KEY;
+    let cache: Record<string, { data: any; timestamp: string; ttl: number }> = {};
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) cache = JSON.parse(raw);
+    } catch {}
+
+    const entry = cache[base];
+    if (entry) {
+      const age = Date.now() - new Date(entry.timestamp).getTime();
+      if (age < (entry.ttl || this.TTL)) {
+        return entry.data;
+      }
+    }
+
+    try {
+      const url = `https://api.exchangerate-api.com/v4/latest/${encodeURIComponent(base)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`rate fetch failed: ${res.status}`);
+      const json = await res.json();
+      const data = { base: json.base || base, date: json.date, rates: json.rates || {} };
+
+      cache[base] = { data, timestamp: new Date().toISOString(), ttl: this.TTL };
+      try { localStorage.setItem(key, JSON.stringify(cache)); } catch {}
+      return data;
+    } catch (e) {
+      // Soft failure: return null; caller will fallback
+      return null;
+    }
   }
 
   /**

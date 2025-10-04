@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User, Session, Company } from '@/lib/types';
 import { storage } from '@/lib/storage';
+import { CountryCurrencyService } from '@/lib/countries';
 
 interface AuthState {
   currentUser: User | null;
@@ -63,15 +64,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return false;
     }
 
-    // Currency mapping based on country
-    const currencyMap: Record<string, string> = {
-      'United States': 'USD',
-      'United Kingdom': 'GBP',
-      'Eurozone': 'EUR',
-      'Japan': 'JPY',
-      'Canada': 'CAD',
-      'Australia': 'AUD',
-    };
+    // Resolve default currency via REST Countries API with fallback
+    let defaultCurrency = 'USD';
+    try {
+      const code = await CountryCurrencyService.resolveCurrencyForCountry(country);
+      if (code) defaultCurrency = code;
+    } catch {}
 
     const companyId = `company-${Date.now()}`;
     const userId = `user-${Date.now()}`;
@@ -80,7 +78,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       id: companyId,
       name: companyName,
       country,
-      defaultCurrency: currencyMap[country] || 'USD',
+      defaultCurrency,
       createdAt: new Date().toISOString(),
     };
 

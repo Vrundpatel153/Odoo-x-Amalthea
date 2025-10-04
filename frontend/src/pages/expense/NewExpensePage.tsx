@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { storage } from '@/lib/storage';
@@ -14,8 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Upload, Loader2 } from 'lucide-react';
+import { CountryCurrencyService } from '@/lib/countries';
 
-const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+// Currencies will be loaded dynamically from REST Countries (unique ISO codes)
 const categories = ['Travel', 'Supplies', 'Equipment', 'Food', 'Entertainment', 'Other'];
 
 const NewExpensePage = () => {
@@ -27,6 +28,7 @@ const NewExpensePage = () => {
   const [isScanning, setIsScanning] = useState(false as any);
   const fileInputRef = useRef(null as any);
   const [ocrData, setOcrData] = useState(undefined as any);
+  const [currencyOptions, setCurrencyOptions] = useState([] as string[]);
   
   const [formData, setFormData] = useState({
     description: '',
@@ -37,6 +39,25 @@ const NewExpensePage = () => {
     expenseCurrency: currentCompany?.defaultCurrency || 'USD',
     totalAmount: 0,
   });
+
+  // Load currencies from countries API once
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const countries = await CountryCurrencyService.getCountries();
+        const set = new Set<string>();
+        countries.forEach(c => c.currencyCodes.forEach(code => code && set.add(code)));
+        // Ensure company default currency appears even if not present
+        if (currentCompany?.defaultCurrency) set.add(currentCompany.defaultCurrency);
+        const list = Array.from(set).sort();
+        if (mounted) setCurrencyOptions(list);
+      } catch {
+        if (mounted) setCurrencyOptions(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [currentCompany?.defaultCurrency]);
 
   const startScan = () => {
     // trigger hidden file input
@@ -251,7 +272,7 @@ const NewExpensePage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {currencies.map((curr) => (
+                    {currencyOptions.map((curr) => (
                       <SelectItem key={curr} value={curr}>{curr}</SelectItem>
                     ))}
                   </SelectContent>
