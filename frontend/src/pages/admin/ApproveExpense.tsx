@@ -13,9 +13,9 @@ import { Check, X } from 'lucide-react';
 
 const ApproveExpensePage = () => {
   const { currentUser, currentCompany } = useAuthStore();
-  const [pending, setPending] = useState<any[]>([]);
+  const [pending, setPending] = useState([] as any[]);
   const [users, setUsers] = useState(storage.getUsers());
-  const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState(null as any | null);
   const [comment, setComment] = useState('');
 
   useEffect(() => {

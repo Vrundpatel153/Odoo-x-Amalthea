@@ -24,7 +24,7 @@ const ApprovalRulesPage = () => {
   const { currentCompany } = useAuthStore();
   const [rules, setRules] = useState(storage.getApprovalRules().filter(r => r.companyId === currentCompany?.id));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<ApprovalRule | null>(null);
+  const [editingRule, setEditingRule] = useState(null as ApprovalRule | null);
   const [formData, setFormData] = useState({
     name: '',
     scope: 'all',

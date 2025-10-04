@@ -38,7 +38,7 @@ const UsersPage = () => {
   const [users, setUsers] = useState(storage.getUsers().filter(u => u.companyId === currentCompany?.id));
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState(null as User | null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
