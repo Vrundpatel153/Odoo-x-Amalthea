@@ -10,7 +10,30 @@
 
 [![Status](https://img.shields.io/badge/status-production-green.svg)]()
 [![Tech](https://img.shields.io/badge/tech-MERN%20%2B%20TS-blue.svg)]()
-[![Deployed on Netlify](https://img.shields.io/badge/deploy-netlify-blue.svg)]()
+[![Deployed on Netlify](https://img.shields.io/badge/deploy-netlify-blue.svg)](https://expense-manager-odoo-vrundpatel.netlify.app/)
+
+<!-- Quick links -->
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Open%20App-00C7B7?logo=netlify&logoColor=white)](https://expense-manager-odoo-vrundpatel.netlify.app/)
+[![Video Walkthrough](https://img.shields.io/badge/Video%20Walkthrough-Google%20Drive-1A73E8?logo=google-drive&logoColor=white)](https://drive.google.com/drive/folders/1tDl_gdLxzekY5bHsK-CLI3fTiXiZRd_p?usp=sharing)
+
+<!-- Tech stack badges -->
+
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)](https://expressjs.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)](https://mongodb.com)
+[![JWT](https://img.shields.io/badge/JWT-000000?logo=jsonwebtokens&logoColor=white)](https://jwt.io)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?logo=socketdotio&logoColor=white)](https://socket.io)
+[![Jest](https://img.shields.io/badge/Jest-C21325?logo=jest&logoColor=white)](https://jestjs.io)
+[![Testing Library](https://img.shields.io/badge/Testing%20Library-E33332?logo=testing-library&logoColor=white)](https://testing-library.com)
+[![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-000000?logoColor=white)](https://ui.shadcn.com)
+[![Tesseract OCR](https://img.shields.io/badge/Tesseract%20OCR-5D2F86)](https://github.com/tesseract-ocr/tesseract)
+[![REST Countries](https://img.shields.io/badge/REST%20Countries-002E3B)](https://restcountries.com)
+[![ExchangeRate API](https://img.shields.io/badge/ExchangeRate%20API-0A0A0A)](https://www.exchangerate-api.com)
 
 ---
 
