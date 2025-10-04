@@ -24,7 +24,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (email: string, password: string) => {
     const users = storage.getUsers();
-    const user = users.find(u => u.email === email && u.password === password);
+    // Accept login with email + any password for users flagged as passwordless
+    const user = users.find(u =>
+      u.email === email && (u.passwordless ? true : u.password === password)
+    );
     
     if (!user) return false;
 

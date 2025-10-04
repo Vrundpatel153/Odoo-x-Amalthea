@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { storage } from '@/lib/storage';
-import { seedData } from '@/lib/seedData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Download, Upload, RefreshCw } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 
 const SettingsPage = () => {
   const handleExport = () => {
@@ -42,12 +41,7 @@ const SettingsPage = () => {
     input.click();
   };
 
-  const handleResetToSeed = () => {
-    if (!confirm('This will reset all data to the seed dataset. Are you sure?')) return;
-    
-    storage.importAll(seedData);
-    toast.success('Data reset to seed. Please refresh the page.');
-  };
+  // Removed reset to seed functionality from production UI
 
   return (
     <div className="container-custom py-8 space-y-6">
@@ -87,20 +81,7 @@ const SettingsPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-destructive/50">
-          <CardHeader>
-            <CardTitle>Reset to Seed Data</CardTitle>
-            <CardDescription>
-              Reset all data to the default seed dataset
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleResetToSeed} variant="destructive" className="gap-2 w-full">
-              <RefreshCw className="h-4 w-4" />
-              Reset to Seed
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Reset to Seed removed */}
       </div>
     </div>
   );

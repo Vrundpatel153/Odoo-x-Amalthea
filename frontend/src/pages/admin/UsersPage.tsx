@@ -47,9 +47,10 @@ const UsersPage = () => {
     managerId: '',
     paidBy: '',
     remarks: '',
+    sendPassword: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
 
     const allUsers = storage.getUsers();
@@ -61,6 +62,7 @@ const UsersPage = () => {
           ? {
               ...u,
               ...formData,
+              passwordless: formData.sendPassword ? true : u.passwordless,
               managerId: formData.managerId === 'none' || !formData.managerId ? null : formData.managerId,
             }
           : u
@@ -79,6 +81,9 @@ const UsersPage = () => {
         id: `user-${Date.now()}`,
         companyId: currentCompany!.id,
         ...formData,
+        // If sendPassword is selected, mark as passwordless and store a placeholder password
+        password: formData.sendPassword ? `temp-${Math.random().toString(36).slice(2, 8)}` : formData.password,
+        passwordless: formData.sendPassword || undefined,
         managerId: formData.managerId === 'none' || !formData.managerId ? null : formData.managerId,
         createdAt: new Date().toISOString(),
       };
@@ -104,6 +109,7 @@ const UsersPage = () => {
       managerId: user.managerId || 'none',
       paidBy: user.paidBy || '',
       remarks: user.remarks || '',
+      sendPassword: !!user.passwordless,
     });
     setIsDialogOpen(true);
   };
@@ -134,6 +140,7 @@ const UsersPage = () => {
       managerId: 'none',
       paidBy: '',
       remarks: '',
+      sendPassword: false,
     });
   };
 
@@ -196,8 +203,19 @@ const UsersPage = () => {
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
+                  required={!formData.sendPassword}
+                  disabled={formData.sendPassword}
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  id="sendPassword"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={formData.sendPassword}
+                  onChange={(e) => setFormData({ ...formData, sendPassword: e.target.checked })}
+                />
+                <Label htmlFor="sendPassword">Send password to user (login with any password)</Label>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
