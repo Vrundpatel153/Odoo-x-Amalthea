@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { storage } from '@/lib/storage';
+import { ApprovalEngine } from '@/lib/approvalEngine';
 import { Expense } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye } from 'lucide-react';
+import { Plus, Search, Eye, Send } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ExpensesPage = () => {
@@ -27,15 +28,18 @@ const ExpensesPage = () => {
     expense.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status: Expense['status']) => {
-    const variants = {
-      draft: 'secondary' as const,
-      pending: 'default' as const,
-      approved: 'default' as const,
-      rejected: 'destructive' as const,
-    };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+  const StatusDot = ({ status }: { status: Expense['status'] }) => {
+    const color = status === 'draft' ? 'bg-white border' :
+      status === 'pending' ? 'bg-yellow-400' :
+      status === 'rejected' ? 'bg-red-500' : 'bg-green-500';
+    return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />;
   };
+  const getStatusBadge = (status: Expense['status']) => (
+    <div className="flex items-center gap-2">
+      <StatusDot status={status} />
+      <Badge variant={status === 'rejected' ? 'destructive' : status === 'draft' ? 'secondary' : 'default'}>{status}</Badge>
+    </div>
+  );
 
   return (
     <div className="container-custom py-8 space-y-6">
@@ -122,6 +126,35 @@ const ExpensesPage = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        {expense.status === 'draft' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Submit"
+                            onClick={() => {
+                              // submit the draft: set to pending and initialize approval
+                              const all = storage.getExpenses();
+                              const idx = all.findIndex(e => e.id === expense.id);
+                              if (idx !== -1) {
+                                const rules = storage.getApprovalRules().filter(r => r.companyId === currentCompany?.id);
+                                const applicableRule = rules.find(r => r.scope === 'all' || r.scope === expense.category) || rules.find(r => r.scope === 'all');
+                                if (!applicableRule) return;
+                                const usersList = storage.getUsers();
+                                const updated = { ...all[idx] } as any;
+                                updated.status = 'pending';
+                                updated.approvalRuleId = applicableRule.id;
+                                updated.approverState = ApprovalEngine.initializeApprovalState(updated, applicableRule, usersList);
+                                updated.updatedAt = new Date().toISOString();
+                                all[idx] = updated;
+                                storage.setExpenses(all);
+                                // force refresh
+                                navigate(0 as any);
+                              }
+                            }}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

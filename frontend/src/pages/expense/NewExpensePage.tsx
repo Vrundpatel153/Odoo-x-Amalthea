@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Upload, Loader2 } from 'lucide-react';
 
@@ -21,6 +22,7 @@ const NewExpensePage = () => {
   const navigate = useNavigate();
   const { currentUser, currentCompany } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(true);
   const [receiptFile, setReceiptFile] = useState(null as any);
   const [isScanning, setIsScanning] = useState(false as any);
   const fileInputRef = useRef(null as any);
@@ -88,7 +90,7 @@ const NewExpensePage = () => {
     }, 3000);
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: any, submitAs: 'draft' | 'submit' = 'submit') => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -109,18 +111,6 @@ const NewExpensePage = () => {
         exchangeRateTimestamp = conversion.timestamp;
       }
 
-      // Find applicable approval rule
-      const rules = storage.getApprovalRules().filter(r => r.companyId === currentCompany?.id);
-      const applicableRule = rules.find(r => 
-        r.scope === 'all' || r.scope === formData.category
-      ) || rules.find(r => r.scope === 'all');
-
-      if (!applicableRule) {
-        toast.error('No approval rule found for this expense');
-        setIsSubmitting(false);
-        return;
-      }
-
       // Create expense
       const expenseId = `expense-${Date.now()}`;
       const users = storage.getUsers();
@@ -139,18 +129,31 @@ const NewExpensePage = () => {
         totalInCompanyCurrency,
         exchangeRate,
         exchangeRateTimestamp,
-        status: 'pending',
-        approvalRuleId: applicableRule.id,
+        status: submitAs === 'draft' ? 'draft' : 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      // Initialize approval state
-      expense.approverState = ApprovalEngine.initializeApprovalState(
-        expense,
-        applicableRule,
-        users
-      );
+      if (submitAs !== 'draft') {
+        // Find applicable approval rule
+        const rules = storage.getApprovalRules().filter(r => r.companyId === currentCompany?.id);
+        const applicableRule = rules.find(r =>
+          r.scope === 'all' || r.scope === formData.category
+        ) || rules.find(r => r.scope === 'all');
+
+        if (!applicableRule) {
+          toast.error('No approval rule found for this expense');
+          setIsSubmitting(false);
+          return;
+        }
+        expense.approvalRuleId = applicableRule.id;
+        // Initialize approval state
+        expense.approverState = ApprovalEngine.initializeApprovalState(
+          expense,
+          applicableRule,
+          users
+        );
+      }
 
       // Save receipt if uploaded
       if (receiptFile) {
@@ -177,8 +180,9 @@ const NewExpensePage = () => {
       expenses.push(expense);
       storage.setExpenses(expenses);
 
-      toast.success('Expense submitted successfully');
-      navigate('/employee/expenses');
+  toast.success(submitAs === 'draft' ? 'Draft saved' : 'Expense submitted successfully');
+  setOpen(false);
+  navigate('/employee/expenses');
     } catch (error) {
       toast.error('Failed to submit expense');
     } finally {
@@ -187,24 +191,13 @@ const NewExpensePage = () => {
   };
 
   return (
-    <div className="container-custom py-8 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">New Expense</h2>
-          <p className="text-muted-foreground">Submit a new expense for approval</p>
-        </div>
-      </div>
-
-      <Card className="glass-card max-w-2xl">
-        <CardHeader>
-          <CardTitle>Expense Details</CardTitle>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) navigate('/employee/expenses'); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>New Expense</DialogTitle>
           <CardDescription>Fill in the information for your expense</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        </DialogHeader>
+        <form onSubmit={(e) => handleSubmit(e, 'submit')} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Input
@@ -332,15 +325,22 @@ const NewExpensePage = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(-1)}
+                onClick={() => { setOpen(false); navigate('/employee/expenses'); }}
               >
                 Cancel
               </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={(e) => handleSubmit(e, 'draft')}
+                disabled={isSubmitting}
+              >
+                Save as Draft
+              </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

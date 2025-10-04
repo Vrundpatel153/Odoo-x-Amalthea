@@ -31,6 +31,13 @@ const ExpenseDetailPage = () => {
   const receipt = receipts.find(r => r.id === expense.receiptId);
   const actions = approvalActions.filter(a => a.expenseId === expense.id);
 
+  const StatusDot = ({ status }: { status: 'draft' | 'pending' | 'approved' | 'rejected' }) => {
+    const color = status === 'draft' ? 'bg-white border' :
+      status === 'pending' ? 'bg-yellow-400' :
+      status === 'rejected' ? 'bg-red-500' : 'bg-green-500';
+    return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />;
+  };
+
   return (
     <div className="container-custom py-8 space-y-6">
       <div className="flex items-center gap-4">
@@ -54,13 +61,16 @@ const ExpenseDetailPage = () => {
                 <p className="text-sm text-muted-foreground">Description</p>
                 <p className="font-medium">{expense.description}</p>
               </div>
-              <Badge variant={
-                expense.status === 'approved' ? 'default' :
-                expense.status === 'rejected' ? 'destructive' :
-                'secondary'
-              }>
-                {expense.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <StatusDot status={expense.status as any} />
+                <Badge variant={
+                  expense.status === 'approved' ? 'default' :
+                  expense.status === 'rejected' ? 'destructive' :
+                  'secondary'
+                }>
+                  {expense.status}
+                </Badge>
+              </div>
             </div>
 
             <Separator />

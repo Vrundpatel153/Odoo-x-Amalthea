@@ -36,9 +36,12 @@ const ApprovalRulesPage = () => {
     specificApproverId: 'none',
   });
 
-  const users = storage.getUsers().filter(u => u.companyId === currentCompany?.id);
+  // Exclude employees from being approvers; only managers/admins can be selected
+  const users = storage
+    .getUsers()
+    .filter(u => u.companyId === currentCompany?.id && u.role !== 'employee');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     
     const allRules = storage.getApprovalRules();
@@ -170,7 +173,7 @@ const ApprovalRulesPage = () => {
                         onChange={(e) => {
                           const ids = new Set(formData.approverIds);
                           if (e.target.checked) ids.add(u.id); else ids.delete(u.id);
-+                          setFormData({ ...formData, approverIds: Array.from(ids) });
+                          setFormData({ ...formData, approverIds: Array.from(ids) });
                         }}
                       />
                       <span className="flex-1">{u.name} <span className="text-xs text-muted-foreground">({u.role})</span></span>
