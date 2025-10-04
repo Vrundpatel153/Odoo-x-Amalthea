@@ -31,8 +31,17 @@ const Login = () => {
   // Removed demo seed reset and quick login shortcuts
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
-      <div className="w-full max-w-md space-y-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 overflow-hidden">
+      {/* stronger background accent */}
+      <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(60%_60%_at_50%_40%,#000_10%,transparent_70%)]">
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl" />
+      </div>
+      {/* Home link */}
+      <button onClick={() => navigate('/')} className="absolute top-4 left-4 text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+        ← Home
+      </button>
+      <div className="w-full max-w-md space-y-4 relative">
         <Card className="glass-card">
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">

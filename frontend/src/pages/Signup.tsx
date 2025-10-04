@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Building2 } from 'lucide-react';
+// removed unused icon import
 
 const countries = [
   'United States',
@@ -30,7 +30,7 @@ const Signup = () => {
     country: '',
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     
     if (!formData.companyName || !formData.adminName || !formData.email || !formData.password || !formData.country) {
@@ -55,8 +55,17 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
-      <Card className="w-full max-w-md glass-card">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 overflow-hidden">
+      {/* stronger background accent */}
+      <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(60%_60%_at_50%_40%,#000_10%,transparent_70%)]">
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl" />
+      </div>
+      {/* Home link */}
+      <button onClick={() => navigate('/')} className="absolute top-4 left-4 text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+        ← Home
+      </button>
+      <Card className="w-full max-w-md glass-card relative">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 rounded-2xl bg-primary/10">
