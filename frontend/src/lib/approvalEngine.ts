@@ -114,33 +114,12 @@ export class ApprovalEngine {
     approver.comment = comment;
     approver.actedAt = new Date().toISOString();
 
-    // If an admin approves, finalize immediately: admin approvals are final
-    // per new business rule (admin acts as final approver).
-    const allUsers = storage.getUsers();
-    const actingUser = allUsers.find(u => u.id === approverId);
-    if (action === 'approved' && actingUser?.role === 'admin') {
-      expense.status = 'approved';
-      expense.updatedAt = new Date().toISOString();
-      storage.setExpenses(expenses);
-      return { success: true, message: 'Expense approved by admin' };
-    }
-
-    // Check if this is a required approver who rejected. Do NOT auto-finalize
-    // the rejection for non-admin users so admins can still override. If an
-    // admin rejects explicitly, finalize the rejection immediately.
+    // If a required approver rejects, immediately finalize as rejected.
     if (action === 'rejected' && rule.requiredFlags[approverId]) {
-      const allUsers = storage.getUsers();
-      const actingUser = allUsers.find(u => u.id === approverId);
-      if (actingUser?.role === 'admin') {
-        expense.status = 'rejected';
-        expense.updatedAt = new Date().toISOString();
-        storage.setExpenses(expenses);
-        return { success: true, message: 'Expense rejected (admin)' };
-      }
-      // Non-admin required approver rejected: record action but leave expense pending
+      expense.status = 'rejected';
       expense.updatedAt = new Date().toISOString();
       storage.setExpenses(expenses);
-      return { success: true, message: 'Rejection recorded (admin can override)' };
+      return { success: true, message: 'Expense rejected (required approver)' };
     }
 
     // Process based on rule type
@@ -163,52 +142,7 @@ export class ApprovalEngine {
       return { success: false, message: 'Invalid approval state' };
     }
 
-    // Check specific approver override
-    if (rule.specificApproverId) {
-      const specificApprover = expense.approverState.approvers.find(
-        a => a.userId === rule.specificApproverId
-      );
-      if (specificApprover?.status === 'approved') {
-        expense.status = 'approved';
-        expense.updatedAt = new Date().toISOString();
-        storage.setExpenses(expenses);
-        return { success: true, message: 'Expense approved (specific approver)' };
-      }
-    }
-
-    // Calculate approval percentage
-    const totalApprovers = expense.approverState.approvers.length;
-    const approvedCount = expense.approverState.approvers.filter(
-      a => a.status === 'approved'
-    ).length;
-    const rejectedCount = expense.approverState.approvers.filter(
-      a => a.status === 'rejected'
-    ).length;
-
-    const approvalPercentage = (approvedCount / totalApprovers) * 100;
-    const possibleApprovals = totalApprovers - rejectedCount;
-    const maxPossiblePercentage = (possibleApprovals / totalApprovers) * 100;
-
-    // Check if threshold is met
-    if (approvalPercentage >= rule.minApprovalPercentage) {
-      expense.status = 'approved';
-      expense.updatedAt = new Date().toISOString();
-      storage.setExpenses(expenses);
-      return { success: true, message: 'Expense approved (threshold met)' };
-    }
-
-    // Check if threshold is impossible to reach. Instead of auto-rejecting,
-    // record the state and leave pending so an admin can still review and
-    // override if desired.
-    if (maxPossiblePercentage < rule.minApprovalPercentage) {
-      expense.updatedAt = new Date().toISOString();
-      storage.setExpenses(expenses);
-      return { success: true, message: 'Action recorded (threshold impossible, admin can override)' };
-    }
-
-    expense.updatedAt = new Date().toISOString();
-    storage.setExpenses(expenses);
-    return { success: true, message: 'Action recorded' };
+    return this.evaluateAndFinalize(expense, rule, expenses);
   }
 
   /**
@@ -225,34 +159,77 @@ export class ApprovalEngine {
 
     const currentApprover = expense.approverState.approvers[expense.approverState.sequenceIndex];
     
-    if (currentApprover.status === 'rejected') {
-      // Only finalize sequential rejection if the rejecting approver is an admin.
-      const users = storage.getUsers();
-      const u = users.find(user => user.id === currentApprover.userId);
-      if (u?.role === 'admin') {
-        expense.status = 'rejected';
-        expense.updatedAt = new Date().toISOString();
-        storage.setExpenses(expenses);
-        return { success: true, message: 'Expense rejected (admin)' };
-      }
-
-      // Non-admin rejection in sequence: keep as pending and allow admin override
-      expense.updatedAt = new Date().toISOString();
-      storage.setExpenses(expenses);
-      return { success: true, message: 'Rejection recorded (admin can override)' };
-    }
-
     if (currentApprover.status === 'approved') {
       // Move to next approver
       expense.approverState.sequenceIndex += 1;
       
-      // Check if we've gone through all approvers
+      // Clamp to last index
       if (expense.approverState.sequenceIndex >= expense.approverState.approvers.length) {
+        expense.approverState.sequenceIndex = expense.approverState.approvers.length - 1;
+      }
+    }
+    return this.evaluateAndFinalize(expense, rule, expenses);
+  }
+
+  /**
+   * Evaluate overall approval status against rule thresholds and finalize
+   */
+  private static evaluateAndFinalize(
+    expense: Expense,
+    rule: ApprovalRule,
+    expenses: Expense[]
+  ): { success: boolean; message: string } {
+    if (!expense.approverState) {
+      return { success: false, message: 'Invalid approval state' };
+    }
+
+    // Specific approver approves => immediate approval
+    if (rule.specificApproverId) {
+      const specificApprover = expense.approverState.approvers.find(
+        a => a.userId === rule.specificApproverId
+      );
+      if (specificApprover?.status === 'approved') {
         expense.status = 'approved';
         expense.updatedAt = new Date().toISOString();
         storage.setExpenses(expenses);
-        return { success: true, message: 'Expense approved (all approvers)' };
+        return { success: true, message: 'Expense approved (specific approver)' };
       }
+    }
+
+    // Immediate rejection if any required approver rejected
+    const requiredIds = Object.keys(rule.requiredFlags || {}).filter(id => rule.requiredFlags[id]);
+    if (requiredIds.length > 0) {
+      const anyRequiredRejected = expense.approverState.approvers.some(
+        a => requiredIds.includes(a.userId) && a.status === 'rejected'
+      );
+      if (anyRequiredRejected) {
+        expense.status = 'rejected';
+        expense.updatedAt = new Date().toISOString();
+        storage.setExpenses(expenses);
+        return { success: true, message: 'Expense rejected (required approver rejected)' };
+      }
+    }
+
+    const totalApprovers = expense.approverState.approvers.length;
+    const approvedCount = expense.approverState.approvers.filter(a => a.status === 'approved').length;
+    const rejectedCount = expense.approverState.approvers.filter(a => a.status === 'rejected').length;
+
+    const approvalPercentage = (approvedCount / totalApprovers) * 100;
+    const possibleApprovals = totalApprovers - rejectedCount; // pending could approve
+    const maxPossiblePercentage = (possibleApprovals / totalApprovers) * 100;
+
+    if (approvalPercentage >= rule.minApprovalPercentage) {
+      expense.status = 'approved';
+      expense.updatedAt = new Date().toISOString();
+      storage.setExpenses(expenses);
+      return { success: true, message: 'Expense approved (threshold met)' };
+    }
+
+    if (maxPossiblePercentage < rule.minApprovalPercentage) {
+      expense.status = 'rejected';
+      expense.updatedAt = new Date().toISOString();
+      storage.setExpenses(expenses);
+      return { success: true, message: 'Expense rejected (threshold impossible)' };
     }
 
     expense.updatedAt = new Date().toISOString();
